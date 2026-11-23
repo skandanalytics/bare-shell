@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Assist</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <section class="broker-host" id="brokerHost" aria-hidden="true"></section>
+    <nav class="mode-overlay" aria-label="Screen mode quick controls">
+      <button id="overlayToggleViewBtn">Toggle View</button>
+    </nav>
+    <main class="app-shell">
+      <header class="topbar">
+        <section class="brand">
+          <div class="brand-mark">TA</div>
+          <div>
+            <h1>Trade Assist</h1>
+            <p>Market watch capture and local execution</p>
+          </div>
+        </section>
+        <section class="status-strip">
+          <div class="status-card" id="brokerStatus">
+            <span>Account</span>
+            <strong>Loading</strong>
+          </div>
+          <div class="status-card" id="sessionStatus">
+            <span>Balance</span>
+            <strong>--</strong>
+          </div>
+          <div class="status-card hot" id="sensexStatus">
+            <span>Day P&L</span>
+            <strong>--</strong>
+          </div>
+        </section>
+        <section class="top-actions">
+          <label class="toolbar-select">
+            Broker
+            <select id="brokerSelect">
+              <option value="aliceblue">Alice Blue</option>
+              <option value="zerodha">Zerodha</option>
+            </select>
+          </label>
+          <div class="icon-actions" aria-label="App controls">
+            <button id="toggleViewBtn" title="Toggle view">⇄</button>
+            <button id="themeToggleBtn" title="Toggle theme">☾</button>
+            <button id="settingsBtn" title="Admin settings">⚙</button>
+          </div>
+        </section>
+      </header>
+
+      <section class="action-row">
+        <button id="openBrokerBtn">Open Alice Login</button>
+        <button id="openWatchlistBtn">Open Watchlist</button>
+        <button id="subscribeBtn" title="Checks whether the broker watchlist websocket is connected. Tick capture runs automatically once the watchlist is open.">Verify Market Feed</button>
+        <button id="syncMetadataBtn" title="Refresh broker symbol/token mappings from account, positions, and order book">Sync Metadata</button>
+        <label class="trade-toggle" title="Enable live strategy orders">
+          <input id="strategyAutoTradeToggle" type="checkbox">
+          <span>Auto Trade</span>
+        </label>
+      </section>
+
+      <section class="metadata-health" id="metadataHealth">
+        <div>
+          <span class="eyebrow">Broker Metadata</span>
+          <strong>Checking CE/PE mappings</strong>
+        </div>
+        <div class="metadata-pills">
+          <span>CE --</span>
+          <span>PE --</span>
+        </div>
+      </section>
+
+      <section class="layout-grid">
+        <section class="panel market-panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">Momentum Candle Visualizer</span>
+              <h2>Market Watch Tick Distribution</h2>
+            </div>
+            <div class="mini-metrics">
+              <label class="instrument-picker">
+                Instrument
+                <select id="instrumentSelect">
+                  <option value="">Waiting for ticks</option>
+                </select>
+              </label>
+              <span id="candleCount">0 candles</span>
+              <span id="lastTickAge">no ticks</span>
+            </div>
+          </div>
+          <div class="legend">
+            <span><i class="swatch bull"></i>Bullish</span>
+            <span><i class="swatch bear"></i>Bearish</span>
+            <span><i class="swatch top"></i>Top zone</span>
+            <span><i class="swatch mid"></i>Mid zone</span>
+            <span><i class="swatch bottom"></i>Bottom zone</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="candleCanvas" width="1120" height="540"></canvas>
+          </div>
+          <div class="candle-focus" id="candleFocus">
+            <div class="focus-main">
+              <span id="focusTime">--</span>
+              <strong id="focusPattern">Hover a candle</strong>
+              <small id="focusBias">Waiting for chart data</small>
+            </div>
+            <div class="focus-grid">
+              <span>Open <strong id="focusOpen">--</strong></span>
+              <span>High <strong id="focusHigh">--</strong></span>
+              <span>Low <strong id="focusLow">--</strong></span>
+              <span>Close <strong id="focusClose">--</strong></span>
+              <span>Ticks <strong id="focusTicks">--</strong></span>
+              <span>Range <strong id="focusRange">--</strong></span>
+              <span>Hi Breaks <strong id="focusHighBreaks">--</strong></span>
+              <span>Lo Breaks <strong id="focusLowBreaks">--</strong></span>
+              <span>Zones <strong id="focusZones">--</strong></span>
+            </div>
+          </div>
+          <div class="candle-stats">
+            <div class="stats-head">
+              <span class="eyebrow">Latest Candle Stats</span>
+              <strong id="statsInstrumentLabel">Waiting for ticks</strong>
+            </div>
+            <div class="stats-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>State</th>
+                    <th>Pattern</th>
+                    <th>O</th>
+                    <th>H</th>
+                    <th>L</th>
+                    <th>C</th>
+                    <th>Ticks</th>
+                    <th>Range</th>
+                    <th>Body</th>
+                    <th>Hi</th>
+                    <th>Lo</th>
+                    <th>Top/Mid/Bot</th>
+                  </tr>
+                </thead>
+                <tbody id="candleStatsBody">
+                  <tr>
+                    <td colspan="13">Waiting for Market Watch ticks</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </section>
+
+      <section class="below-widgets">
+        <section class="panel live-trade-panel">
+          <div class="panel-head compact">
+            <div>
+              <span class="eyebrow">Live Trade Monitor</span>
+              <h2 id="liveTradeTitle">No Active Strategy Trade</h2>
+            </div>
+            <strong id="liveTradeStatus" class="trade-state idle">Idle</strong>
+          </div>
+          <div class="live-trade-grid">
+            <span>Side <strong id="liveTradeSide">--</strong></span>
+            <span>Entry <strong id="liveTradeEntry">--</strong></span>
+            <span>LTP <strong id="liveTradeLtp">--</strong></span>
+            <span>Peak <strong id="liveTradePeak">--</strong></span>
+            <span>Trail SL <strong id="liveTradeTrail">--</strong></span>
+            <span>P&L Pts <strong id="liveTradePnl">--</strong></span>
+            <span>Protective SL <strong id="liveTradeSl">--</strong></span>
+            <span>Last Update <strong id="liveTradeUpdated">--</strong></span>
+          </div>
+          <div class="live-trade-reason" id="liveTradeReason">Waiting for strategy activity.</div>
+          <div class="live-trade-events" id="liveTradeEvents"></div>
+        </section>
+        <section class="panel log-panel">
+          <div class="log-box">
+            <h3>Local Event Log</h3>
+            <div id="eventLog"></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel admin-panel hidden" id="adminPanel" aria-hidden="true">
+          <div class="panel-head compact">
+            <div>
+              <span class="eyebrow">Admin Settings</span>
+              <h2 id="adminPanelTitle">Broker API Discovery</h2>
+            </div>
+          </div>
+          <div class="admin-unlock" id="adminUnlock">
+            <label>
+              Admin Password
+              <input id="adminPasswordInput" type="password" autocomplete="current-password">
+            </label>
+            <button id="adminUnlockBtn">Unlock</button>
+          </div>
+          <div class="admin-content hidden" id="adminContent">
+            <div class="admin-tools" id="adminTools">
+              <button class="internal-only" id="openDataBtn">Open Data Folder</button>
+              <button class="internal-only" id="startDiscoveryBtn">Start Discovery</button>
+              <button class="internal-only" id="stopDiscoveryBtn">Stop Discovery</button>
+              <button class="internal-only" id="openDiscoveryBtn">Open Discovery Log</button>
+              <button id="syncModulesBtn">Sync License</button>
+              <button id="exportSupportBundleBtn">Export Support Bundle</button>
+              <button id="restartAppBtn">Restart App</button>
+              <button class="internal-only" id="validateModulesBtn">Validate Modules</button>
+              <button class="internal-only" id="evaluateModulesBtn">Evaluate Modules</button>
+              <button class="internal-only" id="cleanupModulesBtn">Clean Modules</button>
+              <button class="internal-only" id="runStrategyReportBtn">Refresh Strategy Report</button>
+              <button class="internal-only" id="openStrategyReportBtn">Open Strategy Report</button>
+              <button id="checkCandlesBtn">Check Candles</button>
+            </div>
+          <div class="module-grid">
+            <label class="internal-only">
+              Module Manifest URL
+              <input id="moduleManifestUrlInput" type="url" placeholder="https://api.yourdomain.com/desktop/modules">
+            </label>
+            <label>
+              Licensed User ID
+              <input id="moduleUserIdInput" type="text" placeholder="Customer login/user id">
+            </label>
+            <label>
+              License Key
+              <input id="moduleLicenseKeyInput" type="password" placeholder="Daily entitlement/license key">
+            </label>
+            <label>
+              License Device ID
+              <input id="moduleDeviceIdInput" type="text" readonly>
+            </label>
+            <label class="internal-only">
+              Cleanup Hour IST
+              <input id="moduleCleanupHourInput" type="number" min="0" max="23" value="19">
+            </label>
+            <label class="internal-only">
+              Sync Jitter MS
+              <input id="moduleSyncJitterMsInput" type="number" min="0" max="300000" value="30000">
+            </label>
+            <label class="internal-only">
+              Offline Grace Hours
+              <input id="moduleOfflineGraceHoursInput" type="number" min="1" max="168" value="24">
+            </label>
+            <label class="wide internal-only">
+              Module Public Key
+              <textarea id="modulePublicKeyInput" rows="4" placeholder="PEM public key used to verify signed modules"></textarea>
+            </label>
+            <label class="trade-toggle wide internal-only" title="Allows cached signed modules to remain available briefly when license sync fails, never past license/module expiry.">
+              <input id="moduleOfflineGraceEnabledInput" type="checkbox" checked>
+              <span>Allow offline grace for cached signed modules</span>
+            </label>
+            <label class="trade-toggle wide internal-only" title="Development only. Production modules should always be signed.">
+              <input id="moduleAllowUnsignedInput" type="checkbox">
+              <span>Allow unsigned modules for local testing</span>
+            </label>
+            <label class="trade-toggle wide internal-only" title="Keeps accepted module proposals available for future strategy integration. Live order execution remains shell-gated.">
+              <input id="moduleStrategyEnabledInput" type="checkbox">
+              <span>Enable accepted module proposals for strategy integration</span>
+            </label>
+          </div>
+          <div class="module-status" id="moduleStatus">
+            <strong>Feature modules not configured</strong>
+            <span>Remote strategy features will stay disabled until license sync succeeds.</span>
+          </div>
+          <div class="module-validation internal-only">
+            <table>
+              <thead>
+                <tr>
+                  <th>Module</th>
+                  <th>Version</th>
+                  <th>Feature</th>
+                  <th>Cache</th>
+                  <th>Runtime</th>
+                  <th>Expires</th>
+                </tr>
+              </thead>
+              <tbody id="moduleValidationBody">
+                <tr>
+                  <td colspan="6">No modules cached</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="strategy-report internal-only" id="strategyReport">
+            <strong>Strategy evaluation not loaded</strong>
+            <span>Refresh the report to replay saved candle days and inspect premium P&L metrics.</span>
+          </div>
+          <div class="strategy-report" id="candleIntegrityReport">
+            <strong>Candle integrity not checked</strong>
+            <span>Run Check Candles to inspect saved candle files for gaps, duplicates, malformed rows, and stale instruments.</span>
+          </div>
+          <div class="module-grid">
+            <label class="trade-toggle wide" title="Blocks new entry orders while allowing exits and protective SL activity.">
+              <input id="riskEmergencyStopInput" type="checkbox">
+              <span>Emergency stop new entries</span>
+            </label>
+            <label>
+              Daily Loss Limit
+              <input id="riskDailyLossLimitInput" type="number" min="0" step="1" placeholder="0 disables">
+            </label>
+            <label>
+              Max Trades Per Day
+              <input id="riskMaxTradesInput" type="number" min="0" step="1" placeholder="0 disables">
+            </label>
+            <label>
+              Max Open Positions
+              <input id="riskMaxOpenPositionsInput" type="number" min="0" step="1" placeholder="0 disables">
+            </label>
+            <label>
+              Fast SL Cooldown Min
+              <input id="fastHardSlCooldownInput" type="number" min="0" step="1" placeholder="0 disables">
+            </label>
+            <label class="trade-toggle wide" title="Prunes old local candles, logs, and support bundles on app startup.">
+              <input id="dataRetentionEnabledInput" type="checkbox" checked>
+              <span>Enable local data retention cleanup</span>
+            </label>
+            <label>
+              Candle Retention Days
+              <input id="dataRetentionCandleDaysInput" type="number" min="1" max="3650" step="1">
+            </label>
+            <label>
+              Log Retention Days
+              <input id="dataRetentionJournalDaysInput" type="number" min="1" max="3650" step="1">
+            </label>
+            <label>
+              Support Bundle Days
+              <input id="dataRetentionSupportBundleDaysInput" type="number" min="1" max="3650" step="1">
+            </label>
+          </div>
+          <label class="internal-only">
+            Session Token
+            <input id="sessionTokenInput" type="password" placeholder="Auto-detected after Alice login">
+          </label>
+          <label class="internal-only">
+            Alice API Key
+            <input id="apiKeyInput" type="password" placeholder="Optional">
+          </label>
+          <div class="module-grid metadata-repair">
+            <label>
+              Broker Symbol
+              <input id="metadataSymbolInput" type="text" placeholder="Exact CE/PE trading symbol">
+            </label>
+            <label>
+              Broker Token
+              <input id="metadataTokenInput" type="text" placeholder="Instrument token">
+            </label>
+            <label>
+              Exchange
+              <select id="metadataExchangeInput">
+                <option>BFO</option>
+                <option>NFO</option>
+                <option>BSE</option>
+                <option>NSE</option>
+              </select>
+            </label>
+            <button id="addMetadataBtn">Add Metadata</button>
+          </div>
+          <div class="module-status" id="metadataRepairStatus">
+            <strong>Broker metadata repair</strong>
+            <span>Add the exact broker symbol/token only when CE or PE is missing from today&apos;s learned metadata.</span>
+          </div>
+          <button class="secondary" id="saveConfigBtn">Save Session</button>
+
+          <div class="form-grid internal-only">
+            <label>
+              Symbol
+              <input id="symbolInput" type="text" placeholder="Selected trading symbol">
+            </label>
+            <label>
+              Token
+              <input id="tokenInput" type="text" placeholder="Alice instrument token">
+            </label>
+            <label>
+              Exchange
+              <select id="exchangeInput">
+                <option>BFO</option>
+                <option>BSE</option>
+                <option>NFO</option>
+                <option>NSE</option>
+                <option>MCX</option>
+                <option>CDS</option>
+                <option>BCD</option>
+              </select>
+            </label>
+            <label>
+              Product
+              <select id="productInput">
+                <option>MIS</option>
+                <option>NRML</option>
+                <option>CNC</option>
+              </select>
+            </label>
+            <label>
+              Quantity
+              <input id="quantityInput" type="number" min="1" value="10">
+            </label>
+            <label>
+              Order Type
+              <select id="orderTypeInput">
+                <option>MARKET</option>
+                <option>LIMIT</option>
+                <option>STOPLOSS_LIMIT</option>
+                <option>STOPLOSS_MARKET</option>
+              </select>
+            </label>
+            <label>
+              Price
+              <input id="priceInput" type="number" step="0.05" value="0">
+            </label>
+            <label>
+              Trigger
+              <input id="triggerInput" type="number" step="0.05" value="0">
+            </label>
+          </div>
+
+          <div class="side-row internal-only">
+            <button class="buy" id="buyBtn">Buy</button>
+            <button class="sell" id="sellBtn">Sell</button>
+            <button class="exit" id="exitBtn">Exit</button>
+          </div>
+          <div class="internal-only">
+            <strong id="selectedInstrumentLabel">Waiting for token</strong>
+            <strong id="positionQty">0</strong>
+            <strong id="positionAvg">--</strong>
+            <strong id="positionLtp">--</strong>
+            <strong id="positionPnl">--</strong>
+            <strong id="patternLabel">--</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

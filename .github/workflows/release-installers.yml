@@ -1,0 +1,145 @@
+name: Release Installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Installer platform to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - mac
+          - win
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify Release Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Syntax Check
+        run: npm run check
+
+      - name: Module Tests
+        run: npm run test:modules
+
+      - name: Broker Adapter Tests
+        run: npm run test:brokers
+
+      - name: Version Compatibility Tests
+        run: npm run test:version
+
+      - name: Release Signing Environment Tests
+        run: npm run test:release
+
+      - name: Package Boundary Tests
+        run: npm run test:package-boundary
+
+      - name: Source Boundary Tests
+        run: npm run release:source-boundary
+
+      - name: Shell Access Policy Tests
+        run: npm run test:shell-access
+
+  mac:
+    name: macOS Signed Installer
+    runs-on: macos-latest
+    needs: verify
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.platform == 'all' || inputs.platform == 'mac' }}
+    env:
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_KEYCHAIN: ${{ secrets.APPLE_KEYCHAIN }}
+      APPLE_KEYCHAIN_PROFILE: ${{ secrets.APPLE_KEYCHAIN_PROFILE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate Release Secrets
+        run: npm run release:check-signing -- --platform=mac --require-notarization
+
+      - name: Build Signed macOS Installer
+        run: npm run dist:mac:signed
+
+      - name: Upload macOS Installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installers
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/latest-mac.yml
+          if-no-files-found: error
+
+  windows:
+    name: Windows Signed Installer
+    runs-on: windows-latest
+    needs: verify
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.platform == 'all' || inputs.platform == 'win' }}
+    env:
+      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate Release Secrets
+        run: npm run release:check-signing -- --platform=win
+
+      - name: Build Signed Windows Installer
+        run: npm run dist:win:signed
+
+      - name: Upload Windows Installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installers
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+          if-no-files-found: error

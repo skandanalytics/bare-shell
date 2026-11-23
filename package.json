@@ -1,0 +1,121 @@
+{
+  "name": "trade-assist",
+  "version": "0.1.0",
+  "description": "Standalone Electron trade-assist terminal for broker market-watch capture and local execution.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check broker_preload.js && node --check src/audit_queue.js && node --check src/candle_engine.js && node --check src/data_store.js && node --check src/feature_module_manager.js && node --check src/feature_module_runtime.js && node --check src/feature_proposal_gate.js && node --check src/support_bundle.js && node --check src/observability_snapshot.js && node --check src/version_compatibility.js && node --check src/shell_access_policy.js && node --check src/strategy_identity.js && node --check src/option_symbol.js && node --check src/alice_rest_executor.js && node --check src/brokers/base_adapter.js && node --check src/brokers/discovery_mapping_config.js && node --check src/brokers/discovery_mapping_probe.js && node --check src/brokers/order_status.js && node --check src/brokers/alice_blue_discovery_mapper.js && node --check src/brokers/alice_blue_adapter.js && node --check src/brokers/zerodha_discovery_mapper.js && node --check src/brokers/zerodha_adapter.js && node --check src/brokers/broker_registry.js && node --check renderer/renderer.js && node --check scripts/repair_candle_metadata.js && node --check scripts/repair_strategy_identity.js && node --check scripts/generate_app_icons.js && node --check scripts/release_secret_plan.js && node --check scripts/release_preflight.js && node --check scripts/release_qa_checklist.js && node --check scripts/packaged_first_run_checklist.js && node --check scripts/source_install_check.js && node --check scripts/check_source_distribution_boundary.js && node --check scripts/probe_broker_discovery_mapping.js && node --check scripts/check_release_signing_env.js && node --check scripts/build_signed_installer.js && node --check scripts/test_data_store.js && node --check scripts/test_support_bundle.js && node --check scripts/test_feature_module_runtime.js && node --check scripts/test_feature_module_signatures.js && node --check scripts/test_feature_proposal_validation.js && node --check scripts/test_feature_module_sync_smoke.js && node --check scripts/test_version_compatibility.js && node --check scripts/test_broker_adapters.js && node --check scripts/test_release_signing_env.js && node --check scripts/test_package_boundary.js && node --check scripts/test_shell_access_policy.js",
+    "setup:source": "node scripts/source_install_check.js",
+    "setup:source:mac": "sh scripts/setup-mac.sh",
+    "setup:source:linux": "sh scripts/setup-linux.sh",
+    "setup:source:windows": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",
+    "test:modules": "node scripts/test_feature_module_runtime.js && node scripts/test_feature_module_signatures.js && node scripts/test_feature_proposal_validation.js && node scripts/test_feature_module_sync_smoke.js",
+    "test:brokers": "node scripts/test_broker_adapters.js",
+    "test:version": "node scripts/test_version_compatibility.js",
+    "test:release": "node scripts/test_release_signing_env.js",
+    "test:package-boundary": "node scripts/test_package_boundary.js",
+    "test:shell-access": "node scripts/test_shell_access_policy.js",
+    "test:support": "node scripts/test_support_bundle.js",
+    "test:data-store": "node scripts/test_data_store.js",
+    "probe:broker-mapping": "node scripts/probe_broker_discovery_mapping.js",
+    "repair:strategy-identity": "node scripts/repair_strategy_identity.js",
+    "repair:strategy-identity:apply": "node scripts/repair_strategy_identity.js --apply",
+    "repair:candles": "node scripts/repair_candle_metadata.js",
+    "repair:candles:apply": "node scripts/repair_candle_metadata.js --apply",
+    "icons:generate": "node scripts/generate_app_icons.js",
+    "package:shell": "npm run test:package-boundary && npm run pack -- --publish=never",
+    "pack": "npm run icons:generate && electron-builder --dir",
+    "release:check-signing": "node scripts/check_release_signing_env.js",
+    "release:secrets-plan": "node scripts/release_secret_plan.js",
+    "release:preflight": "node scripts/release_preflight.js",
+    "release:source-boundary": "node scripts/check_source_distribution_boundary.js",
+    "release:qa-checklist": "node scripts/release_qa_checklist.js",
+    "release:first-run-checklist": "node scripts/packaged_first_run_checklist.js",
+    "dist": "npm run icons:generate && electron-builder",
+    "dist:mac:signed": "npm run icons:generate && node scripts/build_signed_installer.js --platform=mac",
+    "dist:win:signed": "npm run icons:generate && node scripts/build_signed_installer.js --platform=win"
+  },
+  "keywords": [
+    "electron",
+    "aliceblue",
+    "market-watch",
+    "sensex",
+    "trading"
+  ],
+  "author": "Skand Analytics",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.skandanalytics.tradeassist",
+    "productName": "Trade Assist",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "files": [
+      "main.js",
+      "preload.js",
+      "broker_preload.js",
+      "src/**/*",
+      "!src/license_server.js",
+      "!src/license_subscription_store.js",
+      "!src/rate_limiter.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "icon": "icon.icns",
+      "category": "public.app-category.finance",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "notarize": true,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "sign": false
+    },
+    "win": {
+      "icon": "icon.ico",
+      "publisherName": "Skand Analytics",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

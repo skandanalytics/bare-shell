@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    name: Syntax And Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Syntax Check
+        run: npm run check
+
+      - name: Module Tests
+        run: npm run test:modules
+
+      - name: Broker Adapter Tests
+        run: npm run test:brokers
+
+      - name: Version Compatibility Tests
+        run: npm run test:version
+
+      - name: Release Signing Environment Tests
+        run: npm run test:release
+
+      - name: Package Boundary Tests
+        run: npm run test:package-boundary
+
+      - name: Source Boundary Tests
+        run: npm run release:source-boundary
+
+      - name: Shell Access Policy Tests
+        run: npm run test:shell-access
+
+      - name: Electron Pack Smoke
+        run: npm run pack -- --publish=never
