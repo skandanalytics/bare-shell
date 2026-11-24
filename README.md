@@ -35,8 +35,8 @@ The packaged shell starts like a normal desktop app, then syncs licensed feature
 While paid signing certificates are pending, trusted technical pilot users can run from a bare-shell source checkout:
 
 ```bash
-git clone https://github.com/skandanalytics/Trade_Assist.git
-cd Trade_Assist
+git clone https://github.com/skandanalytics/bare-shell.git
+cd bare-shell
 sh scripts/setup-mac.sh
 npm start
 ```
@@ -44,6 +44,8 @@ npm start
 Windows users can run:
 
 ```powershell
+git clone https://github.com/skandanalytics/bare-shell.git
+cd bare-shell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-windows.ps1
 npm start
 ```

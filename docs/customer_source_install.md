@@ -6,7 +6,7 @@ Use this path while paid macOS/Windows signing is pending. It is not the final l
 
 ## Before Sharing A Source Repo
 
-Only share a branch that contains the bare shell. Do not share this working branch as a public/customer source repo until private strategy and operator code are removed or moved into signed modules.
+Only share the public clean-history `skandanalytics/bare-shell` repo or a branch that contains the bare shell. Do not share this working branch as a public/customer source repo until private strategy and operator code are removed or moved into signed modules.
 
 Run this gate before opening a source-install branch to customers:
 
@@ -29,8 +29,8 @@ Customers need:
 ## macOS
 
 ```sh
-git clone https://github.com/skandanalytics/Trade_Assist.git
-cd Trade_Assist
+git clone https://github.com/skandanalytics/bare-shell.git
+cd bare-shell
 sh scripts/setup-mac.sh
 npm start
 ```
@@ -44,8 +44,8 @@ If macOS was launched from an environment where `ELECTRON_RUN_AS_NODE` is set, u
 ## Linux
 
 ```sh
-git clone https://github.com/skandanalytics/Trade_Assist.git
-cd Trade_Assist
+git clone https://github.com/skandanalytics/bare-shell.git
+cd bare-shell
 sh scripts/setup-linux.sh
 npm start
 ```
@@ -53,8 +53,8 @@ npm start
 ## Windows PowerShell
 
 ```powershell
-git clone https://github.com/skandanalytics/Trade_Assist.git
-cd Trade_Assist
+git clone https://github.com/skandanalytics/bare-shell.git
+cd bare-shell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-windows.ps1
 npm start
 ```
@@ -85,7 +85,7 @@ npm run setup:source
 npm start
 ```
 
-On Windows, run the PowerShell setup script again instead of `npm run setup:source` if the customer prefers the guided command.
+`npm run source:install-check` is kept as an alias for the same setup check. On Windows, run the PowerShell setup script again instead of `npm run setup:source` if the customer prefers the guided command.
 
 ## Licensing And Module Flow
 
